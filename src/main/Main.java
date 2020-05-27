@@ -9,9 +9,10 @@ import util.geometric.GeometricSolution;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Random;
-import java.util.Scanner;
+//import java.util.Scanner;
 import util.avl.*;
 import util.geometry.*;
+import util.other.Table;
 
 /**
  *
@@ -21,16 +22,20 @@ public class Main {
     
     private static GeometricSolution geometric;
     private static AVLSolution avl;
+    private static boolean verbose = false;
     
     public static void main(String[] args) { 
         
-        int n = 5;
-        final int fStart = 5;
-        int f;
-        int c = 4;
+        final int fStart = 1;
+        final int nStart = 1;
         
-        List<Point> points;
-        List<Function> functions;
+        int n = nStart;
+        int f = fStart;
+        int c1 = 4;
+        int c2 = 5;
+        
+        List<Point> points = new ArrayList();
+        List<Function> functions = new ArrayList();
         
 //        solveAVL(points, functions);
 //        solveGeometric(points, functions);
@@ -49,20 +54,66 @@ public class Main {
 //            }
 //        }
 
-        for (int i = 0; i <= c; i++) {
-            n = n * (int)Math.pow(10, i);
-            f = fStart;
-            points = generatePoints(n);
-            solveAVL(points, new ArrayList<>());
-            solveGeometric(points, new ArrayList<>());
-            for (int ii = 0; ii <= c; ii++) {
-                f = f * (int)Math.pow(10, i);
-                functions = generateFunctions(f);
-                solveAVL(points, new ArrayList<>());
-                solveGeometric(points, new ArrayList<>());
+        int testSizeFunction = 1000;
+        int testSizePoints = 20;
+        double medA = 0;
+        double medAt;
+        double medG = 0;
+        double medGt;
+        
+        double medApt;
+        double medAp = 0;
+        double medGpt;
+        double medGp = 0;
+        
+        for (int i = 0; i <= c1; i++) {
+            n = nStart * (int)Math.pow(10, i);
+            for (int jj = 0; jj < testSizePoints; jj++) {
+                points.addAll(generatePoints(n));
+                medApt = System.currentTimeMillis();
+                avl = new AVLSolution(points);
+                medAp += System.currentTimeMillis() - medApt;
+                medGpt = System.currentTimeMillis();
+                geometric = new GeometricSolution(points);
+                medGp += System.currentTimeMillis() - medGpt;
+                points.clear();
+                System.gc();
             }
+            System.out.println(String.format("Medium timing for %d points for Geometric solution: %.2fms", n, medGp / testSizePoints));
+            System.out.println(String.format("Medium timing for %d points for AVL solution: %.2fms", n, medAp / testSizePoints));
         }
         
+        for (int i = 0; i <= c1; i++) {
+            n = nStart * (int)Math.pow(10, i);
+            points.clear();
+            System.gc();
+            points.addAll(generatePoints(n));
+            avl = new AVLSolution(points);
+            geometric = new GeometricSolution(points);
+            for (int ii = 0; ii <= c2; ii++) {
+                f = fStart * (int)Math.pow(10, ii);
+                for (int jj = 0; jj < testSizeFunction; jj++) {
+                    functions.clear();
+                    System.gc(); 
+                    functions.addAll(generateFunctions(f));
+                    medAt = System.currentTimeMillis();
+                    functions.forEach((fc) -> {
+                        List<Point> result = avl.getPointsAbove(fc);
+                    });
+                    medA += System.currentTimeMillis() - medAt;
+                    medGt = System.currentTimeMillis();
+                    functions.forEach((fc) -> {
+                        List<Point> result = geometric.getPointsAbove(fc);
+                    });
+                    medG += System.currentTimeMillis() - medGt;
+                }
+                System.out.println(String.format("Medium timing for %d functions on %d points for Geometric solution: %.2fms", f, n, medG / testSizeFunction));
+                System.out.println(String.format("Medium timing for %d functions on %d points for AVL solution: %.2fms", f, n, medA / testSizeFunction));
+                medG = 0;
+                medA = 0;
+            }
+        }
+        System.out.println("End");
     }
     
     public static void solveGeometric(List<Point> points, List<Function> functions) {
@@ -70,18 +121,18 @@ public class Main {
         final List<Point> result = new ArrayList<>();
         
         if (geometric == null || geometric.getSize() != points.size()) {
-            System.out.println("Started Geometric solution data structure");
+            if (verbose) {System.out.println("Started Geometric solution data structure");}
             geometric = new GeometricSolution(points);
-            System.out.println("Datastructure Geometric took: " + (System.currentTimeMillis() - time) + "ms");
+            if (verbose) {System.out.println("Datastructure Geometric took: " + (System.currentTimeMillis() - time) + "ms");}
         }
         
         time = System.currentTimeMillis();
-        System.out.println("Started Geometric query");
+        if (verbose) {System.out.println("Started Geometric query");}
         functions.forEach((f) -> {
             result.clear();
             result.addAll(geometric.getPointsAbove(f));
         });
-        System.out.println("Query Geometric took: " + (System.currentTimeMillis() - time) + "ms");
+        if (verbose) {System.out.println("Query Geometric took: " + (System.currentTimeMillis() - time) + "ms");}
         
 //        PointsWindow window = new PointsWindow();
 //                
@@ -103,17 +154,17 @@ public class Main {
         long time = System.currentTimeMillis();
         
         if (avl == null || avl.getSize() != points.size()) {
-            System.out.println("Started AVL solution data structure");
+            if (verbose) {System.out.println("Started AVL solution data structure");}
             avl = new AVLSolution(points);
-            System.out.println("Datastructure AVL took: " + (System.currentTimeMillis() - time) + "ms");
+            if (verbose) {System.out.println("Datastructure AVL took: " + (System.currentTimeMillis() - time) + "ms");}
         }
         
         time = System.currentTimeMillis();
-        System.out.println("Started AVL query");
+        if (verbose) {System.out.println("Started AVL query");}
         functions.forEach((f) -> {
             List<Point> result = avl.getPointsAbove(f);
         });
-        System.out.println("Query AVL took: " + (System.currentTimeMillis() - time) + "ms");
+        if (verbose) {System.out.println("Query AVL took: " + (System.currentTimeMillis() - time) + "ms");}
         
 //        PointsWindow window = new PointsWindow();
 //        points.forEach((point) -> {

@@ -9,10 +9,10 @@ import util.geometric.GeometricSolution;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Random;
-//import java.util.Scanner;
+import java.util.Scanner;
 import util.avl.*;
+import util.geometric.ConvexHull;
 import util.geometry.*;
-import util.other.Table;
 
 /**
  *
@@ -25,95 +25,73 @@ public class Main {
     private static boolean verbose = false;
     
     public static void main(String[] args) { 
+        PointsWindow window = new PointsWindow();
+        List<Point> points = generatePoints(50);
+        List<Point> pointsBuffer = new ArrayList<>();
+        List<Point> result;
+        List<Function> functions = generateFunctions(10);
+        String text;
         
-        final int fStart = 1;
-        final int nStart = 1;
-        
-        int n = nStart;
-        int f = fStart;
-        int c1 = 4;
-        int c2 = 5;
-        
-        List<Point> points = new ArrayList();
-        List<Function> functions = new ArrayList();
-        
-//        solveAVL(points, functions);
-//        solveGeometric(points, functions);
-//        
-//        Scanner scan = new Scanner(System.in);
-//        while (f != 0) {
-//            System.out.println("print amount of functions to query");
-//            try {
-//                f = Integer.parseInt(scan.nextLine());
-//                functions = generateFunctions(f);
-//                solveAVL(points, functions);
-//                solveGeometric(points, functions);
-//            } catch (NumberFormatException nfe) {
-//                System.out.println("Not a number");
-//                f = 1;
-//            }
-//        }
+        try (Scanner input = new Scanner(System.in)) {
+            pointsBuffer.addAll(points);
+            
+            window.clear();
+            window.setVisible(true);
+            window.addPoints(pointsBuffer.toArray(new Point[pointsBuffer.size()]));
+            System.out.println("Press enter to start");
+            text = input.nextLine();
+            sleep(10000);
 
-        int testSizeFunction = 1000;
-        int testSizePoints = 20;
-        double medA = 0;
-        double medAt;
-        double medG = 0;
-        double medGt;
-        
-        double medApt;
-        double medAp = 0;
-        double medGpt;
-        double medGp = 0;
-        
-        for (int i = 0; i <= c1; i++) {
-            n = nStart * (int)Math.pow(10, i);
-            for (int jj = 0; jj < testSizePoints; jj++) {
-                points.addAll(generatePoints(n));
-                medApt = System.currentTimeMillis();
-                avl = new AVLSolution(points);
-                medAp += System.currentTimeMillis() - medApt;
-                medGpt = System.currentTimeMillis();
-                geometric = new GeometricSolution(points);
-                medGp += System.currentTimeMillis() - medGpt;
+            solveGeometric(points, new ArrayList<>());
+            geometric.getConvexLayers().forEach((convex) -> {
+                window.addLines(ConvexHull.makeLinesFromConvex(convex));
+            });
+            sleep(15000);
+
+            window.addLines2(ConvexHull.makeLinesFromLinks(geometric.getLinkedLayers()));
+            sleep(5000);
+            window.clear();
+            window.addPoints(pointsBuffer.toArray(new Point[pointsBuffer.size()]));
+            sleep(5000);
+                
+            for (Function f : functions) {
                 points.clear();
-                System.gc();
+                points.addAll(pointsBuffer);
+                solveGeometric(points, new ArrayList<>());
+                window.addPoints(pointsBuffer.toArray(new Point[pointsBuffer.size()]));
+                geometric.getConvexLayers().forEach((convex) -> {
+                    window.addLines(ConvexHull.makeLinesFromConvex(convex));
+                });
+//                sleep(5000);
+                
+                window.addLines2(new Line(new Point(0, f.getYFromX(0)), new Point(1000, f.getYFromX(1000))));
+                sleep(5000);
+                
+                result = geometric.getPointsAbove(f);
+                window.addPoints2(result.toArray(new Point[result.size()]));
+                sleep(5000);
+                window.clear();
+                
+                points.clear();
+                points.addAll(pointsBuffer);
+                solveAVL(points, new ArrayList<>());
+                window.addPoints(pointsBuffer.toArray(new Point[pointsBuffer.size()]));
+                window.addLines2(new Line(new Point(0, f.getYFromX(0)), new Point(1000, f.getYFromX(1000))));
+                sleep(5000);
+                
+                result = avl.getPointsAbove(f);
+                window.addPoints2(result.toArray(new Point[result.size()]));
+                sleep(5000);
+                
+                window.clear();
             }
-            System.out.println(String.format("Medium timing for %d points for Geometric solution: %.2fms", n, medGp / testSizePoints));
-            System.out.println(String.format("Medium timing for %d points for AVL solution: %.2fms", n, medAp / testSizePoints));
+            input.close();
+            System.exit(0);
         }
-        
-        for (int i = 0; i <= c1; i++) {
-            n = nStart * (int)Math.pow(10, i);
-            points.clear();
-            System.gc();
-            points.addAll(generatePoints(n));
-            avl = new AVLSolution(points);
-            geometric = new GeometricSolution(points);
-            for (int ii = 0; ii <= c2; ii++) {
-                f = fStart * (int)Math.pow(10, ii);
-                for (int jj = 0; jj < testSizeFunction; jj++) {
-                    functions.clear();
-                    System.gc(); 
-                    functions.addAll(generateFunctions(f));
-                    medAt = System.currentTimeMillis();
-                    functions.forEach((fc) -> {
-                        List<Point> result = avl.getPointsAbove(fc);
-                    });
-                    medA += System.currentTimeMillis() - medAt;
-                    medGt = System.currentTimeMillis();
-                    functions.forEach((fc) -> {
-                        List<Point> result = geometric.getPointsAbove(fc);
-                    });
-                    medG += System.currentTimeMillis() - medGt;
-                }
-                System.out.println(String.format("Medium timing for %d functions on %d points for Geometric solution: %.2fms", f, n, medG / testSizeFunction));
-                System.out.println(String.format("Medium timing for %d functions on %d points for AVL solution: %.2fms", f, n, medA / testSizeFunction));
-                medG = 0;
-                medA = 0;
-            }
-        }
-        System.out.println("End");
+    }
+    
+    public static void sleep(long ms) {
+        try {Thread.sleep(ms);} catch (InterruptedException ex) {}
     }
     
     public static void solveGeometric(List<Point> points, List<Function> functions) {
@@ -133,21 +111,6 @@ public class Main {
             result.addAll(geometric.getPointsAbove(f));
         });
         if (verbose) {System.out.println("Query Geometric took: " + (System.currentTimeMillis() - time) + "ms");}
-        
-//        PointsWindow window = new PointsWindow();
-//                
-//        solution.getConvexLayers().forEach((convexLayer) -> {
-//            window.addLines(ConvexHull.makeLinesFromConvex(convexLayer));
-//            for (Point point : convexLayer) {
-//                window.addPoints(point);
-//            }
-//        });
-//        
-//        window.addLines2(new Line(new Point(0, functions.get(0).getYFromX(0)), new Point(1000, functions.get(0).getYFromX(1000))));
-//        
-//        window.addPoints2(result.toArray(new Point[result.size()]));
-//        
-//        window.setVisible(true);
     }
     
     public static void solveAVL(List<Point> points, List<Function> functions) {
@@ -165,19 +128,6 @@ public class Main {
             List<Point> result = avl.getPointsAbove(f);
         });
         if (verbose) {System.out.println("Query AVL took: " + (System.currentTimeMillis() - time) + "ms");}
-        
-//        PointsWindow window = new PointsWindow();
-//        points.forEach((point) -> {
-//            window.addPoints(point);
-//        });
-//        
-//        result.forEach((point) -> {
-//            window.addPoints2(point);
-//        });
-//        
-//        window.addLines(new Line(new Point(0, f.getYFromX(f.c)), new Point(1000, f.getYFromX(1000))));
-//        
-//        window.setVisible(true);
     }
     
     public static List<Point> generatePoints(int n) {
@@ -185,10 +135,10 @@ public class Main {
         Random r = new Random();
         for (int i = 0; i < n; i++) {
 
-            int x = Math.abs(r.nextInt(350));
-            int y = Math.abs(r.nextInt(180));
+            int x = Math.abs(r.nextInt(200));
+            int y = Math.abs(r.nextInt(120));
             try {
-                points.add(new Point(x + 10, y + 10));
+                points.add(new Point(x + 1, y + 1));
             } catch (AssertionError ae) {
                 i--;
             }

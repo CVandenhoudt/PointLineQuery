@@ -114,6 +114,13 @@ class Surface extends JPanel implements ActionListener {
     public void actionPerformed(ActionEvent e) {
         repaint();
     }
+
+    public void clear() {
+        this.lines = new ArrayList<>();
+        this.lines2 = new ArrayList<>();
+        this.points = new ArrayList<>();
+        this.points2 = new ArrayList<>();
+    }
 }
 
 public class PointsWindow extends JFrame {
@@ -155,8 +162,12 @@ public class PointsWindow extends JFrame {
         });
         
         setTitle("Points");
-        setSize(350, 250);
+        setSize(1000, 700);
         setLocationRelativeTo(null);
         setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
+    }
+    
+    public void clear() {
+        this.surface.clear();
     }
 }

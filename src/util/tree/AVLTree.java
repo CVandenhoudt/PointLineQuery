@@ -5,7 +5,8 @@
  */
 package util.tree;
 
-import util.avl.NodeData;
+import java.util.ArrayList;
+import java.util.List;
 
 /**
  *
@@ -144,6 +145,62 @@ public class AVLTree extends Tree {
         if (result == null) {
             return node;
         }
+        
+        return result;
+    }
+    
+    public List<Node> getAllElementsLeftFrom(Comparable key) {
+        return this.getAllElementsLeftFrom(key, root);
+    }
+    
+    private List<Node> getAllElementsLeftFrom(Comparable key, Node node) {
+        List<Node> result = new ArrayList<>();
+        if (node == null) {
+            return result;
+        }
+        if (node.getValue().compareTo(key) == 0) {
+            result.addAll(this.getAllElementsFrom(node.getLeft()));
+        } else if (node.getValue().compareTo(key) > 0) {
+            result.addAll(this.getAllElementsLeftFrom(key, node.getLeft()));
+        } else {
+            result.addAll(this.getAllElementsFrom(node.getLeft()));
+            result.add(node);
+            result.addAll(this.getAllElementsLeftFrom(key, node.getRight()));
+        }
+        return result;
+    }
+    
+    public List<Node> getAllElementsRightFrom(Comparable key) {
+        return this.getAllElementsRightFrom(key, root);
+    }
+    
+    private List<Node> getAllElementsRightFrom(Comparable key, Node node) {
+        List<Node> result = new ArrayList<>();
+        if (node == null) {
+            return result;
+        }
+        if (node.getValue().compareTo(key) == 0) {
+            result.addAll(this.getAllElementsFrom(node.getLeft()));
+        } else if (node.getValue().compareTo(key) > 0) {
+            result.addAll(this.getAllElementsFrom(node.getRight()));
+            result.add(node);
+            result.addAll(this.getAllElementsLeftFrom(key, node.getLeft()));
+        } else {
+            result.addAll(this.getAllElementsLeftFrom(key, node.getRight()));
+        }
+        return result;
+    }
+    
+    private List<Node> getAllElementsFrom(Node node) {
+        List<Node> result = new ArrayList<>();
+        
+        if (node == null) {
+            return result;
+        }
+        
+        result.addAll(getAllElementsFrom(node.getRight()));
+        result.addAll(getAllElementsFrom(node.getLeft()));
+        result.add(node);
         
         return result;
     }

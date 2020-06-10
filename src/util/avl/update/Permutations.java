@@ -3,9 +3,8 @@
  * To change this template file, choose Tools | Templates
  * and open the template in the editor.
  */
-package util.avl;
+package util.avl.update;
 
-//import java.util.ArrayList;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Iterator;
@@ -14,6 +13,7 @@ import java.util.Map;
 import java.util.TreeMap;
 import util.geometry.Function;
 import util.geometry.Point;
+import util.tree.AVLTree;
 
 /**
  *
@@ -26,8 +26,8 @@ public class Permutations {
      * @param points to generate the permutations of.
      * @return map with the Double as key value for witch function it counts coupled with the list
      */
-    public static Map<Double, List<Point>> generatePermutations(List<Point> points) {
-        Map<Double, List<Point>> permutations = new HashMap<>();
+    public static Map<Double, AVLTree> generatePermutations(List<Point> points) {
+        Map<Double, AVLTree> permutations = new HashMap<>();
         double key;
         
         for (Point point : points) {
@@ -37,26 +37,19 @@ public class Permutations {
                 key = point.y / point.x;
             }
             if (!permutations.containsKey(key)) {
-//                System.out.println("Key: " + key);
                 permutations.put(key, sortPointsByFunction(points, new Function(point.y / point.x)));
-//                System.out.println("With permutation: " + permutations.get(key));
             }
         }
         
         return permutations;
     }
     
-    private static List<Point> sortPointsByFunction(List<Point> points, Function f) {
+    private static AVLTree sortPointsByFunction(List<Point> points, Function f) {
         Map<Double, List<Point>> sorted = new TreeMap<>();
-        ArrayList<Point> result = new ArrayList<>();
+        AVLTree result = new AVLTree();
         
         points.forEach((point) -> {
             double d = f.a * point.y + f.b * point.x;
-//            double d = f.getDistanceFromPointToLine(point.x, point.y);
-//            if (f.getYFromX(point.x) > point.y) {
-//                d = -d;
-//            }
-//            System.out.println("Key: " + d);
             if (!sorted.containsKey(d)) {
                 sorted.put(d, new ArrayList<>());
             }
@@ -68,9 +61,8 @@ public class Permutations {
         while (it.hasNext()) {
             Map.Entry pair = (Map.Entry)it.next();
             list = (List<Point>) pair.getValue();
-            for (Point point : list) {
-                result.add(point);
-            }
+            double fillIn = (double)pair.getKey();
+            result.insert(new AVLNode(fillIn, points));
         }
         
         return result;
